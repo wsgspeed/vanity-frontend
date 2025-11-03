@@ -13,7 +13,6 @@ export default function UserProfile() {
                 const res = await fetch(
                     `https://vanitybackend-43ng.onrender.com/api/getProfileByUsername/${username}`
                 );
-
                 if (!res.ok) {
                     if (res.status === 404) {
                         setProfile(null);
@@ -27,32 +26,22 @@ export default function UserProfile() {
                     setError(null);
                 }
             } catch (err) {
-                console.error(err);
                 setError("Server error. Please try again later.");
                 setProfile(null);
             } finally {
                 setLoading(false);
             }
         };
-
         fetchProfile();
     }, [username]);
 
-    if (loading) {
+    if (loading) return <p className="text-white p-6">Loading profile...</p>;
+    if (error)
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-900 text-gray-300">
-                Loading profile...
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-900 text-gray-300 text-center px-4">
+            <div className="min-h-screen flex items-center justify-center text-gray-300 text-center p-4 bg-gray-900">
                 {error}
             </div>
         );
-    }
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-gray-950 to-gray-900 text-gray-100 p-6">
