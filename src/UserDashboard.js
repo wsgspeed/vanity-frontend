@@ -8,7 +8,7 @@ export default function UserDashboard() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Read the logged-in user from localStorage
+    // Read logged-in user from localStorage
     const storedUser = JSON.parse(localStorage.getItem("vanityUser") || "{}");
     const username = storedUser.username;
 
@@ -19,14 +19,34 @@ export default function UserDashboard() {
             return;
         }
 
-        const fetchProfile = async () => {
+        const fetchOrCreateProfile = async () => {
             try {
-                const res = await fetch(
+                let res = await fetch(
                     `https://vanitybackend-43ng.onrender.com/api/getProfile/${username}`
                 );
-                if (!res.ok) throw new Error("Profile not found");
-                const data = await res.json();
 
+                // If profile not found, create a new one
+                if (res.status === 404) {
+                    await fetch("https://vanitybackend-43ng.onrender.com/api/saveProfile", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            username,
+                            bio: "",
+                            links: [],
+                            pfpUrl: null,
+                        }),
+                    });
+
+                    // Retry fetching after creation
+                    res = await fetch(
+                        `https://vanitybackend-43ng.onrender.com/api/getProfile/${username}`
+                    );
+                }
+
+                if (!res.ok) throw new Error("Failed to load profile");
+
+                const data = await res.json();
                 setUserName(data.username || "");
                 setBio(data.bio || "");
                 setLinks((data.links || []).join(", "));
@@ -39,7 +59,7 @@ export default function UserDashboard() {
             }
         };
 
-        fetchProfile();
+        fetchOrCreateProfile();
     }, [username]);
 
     const handleSaveProfile = async () => {
@@ -90,7 +110,7 @@ export default function UserDashboard() {
                     )}
                     <input
                         type="text"
-                        value={pfpUrl}
+                        value={pfpUrl || ""}
                         placeholder="Enter image URL"
                         onChange={(e) => setPfpUrl(e.target.value)}
                         className="w-full p-2 rounded bg-gray-800 border border-gray-700"
@@ -100,7 +120,7 @@ export default function UserDashboard() {
                 <div className="mb-4">
                     <label>Username</label>
                     <input
-                        value={userName}
+                        value={userName || ""}
                         onChange={(e) => setUserName(e.target.value)}
                         className="w-full p-2 rounded bg-gray-800 border border-gray-700"
                     />
@@ -109,7 +129,7 @@ export default function UserDashboard() {
                 <div className="mb-4">
                     <label>Bio</label>
                     <textarea
-                        value={bio}
+                        value={bio || ""}
                         onChange={(e) => setBio(e.target.value)}
                         className="w-full p-2 rounded bg-gray-800 border border-gray-700"
                     />
@@ -118,7 +138,7 @@ export default function UserDashboard() {
                 <div className="mb-4">
                     <label>Links (comma separated)</label>
                     <input
-                        value={links}
+                        value={links || ""}
                         onChange={(e) => setLinks(e.target.value)}
                         className="w-full p-2 rounded bg-gray-800 border border-gray-700"
                     />
@@ -133,5 +153,4 @@ export default function UserDashboard() {
             </div>
         </div>
     );
-}
-// hi
+}// bruh
