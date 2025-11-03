@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-
+// 67
 export default function UserProfile() {
   const { username } = useParams();
   const [profile, setProfile] = useState(null);
