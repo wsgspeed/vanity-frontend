@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import Particles from "react-tsparticles";
 
 export default function UserProfile() {
-    const { username } = useParams(); // or uid if you want
+    const { username } = useParams();
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -11,9 +10,7 @@ export default function UserProfile() {
     useEffect(() => {
         const fetchProfile = async () => {
             try {
-                const res = await fetch(
-                    `https://vanitybackend-43ng.onrender.com/api/getProfile/${username}`
-                );
+                const res = await fetch(`https://vanitybackend-43ng.onrender.com/api/getProfile/${username}`);
                 if (!res.ok) {
                     if (res.status === 404) setProfile(null);
                     throw new Error("Profile not found");
@@ -34,7 +31,7 @@ export default function UserProfile() {
     if (error) return <p className="text-red-500 p-6">{error}</p>;
     if (!profile) return <p className="text-gray-300 p-6">404: User not found</p>;
 
-    // Determine background
+    // Background styles
     let bgStyle = {};
     if (profile.bgType === "color") bgStyle.backgroundColor = profile.bgColor || "#111";
     else if (profile.bgType === "gradient") bgStyle.backgroundImage = profile.bgGradient || "linear-gradient(to right, #0ea5e9, #f43f5e)";
@@ -42,22 +39,7 @@ export default function UserProfile() {
 
     return (
         <div className="min-h-screen relative text-white p-6" style={bgStyle}>
-            {profile.cursorEnabled && <CustomCursor color={profile.cursorColor} trail={profile.cursorTrail} />}
-            {profile.themeColor && (
-                <Particles
-                    className="absolute top-0 left-0 w-full h-full z-0"
-                    options={{
-                        fpsLimit: 60,
-                        particles: {
-                            number: { value: 50 },
-                            color: { value: profile.themeColor },
-                            move: { enable: true, speed: 2 },
-                            shape: { type: "circle" }
-                        },
-                    }}
-                />
-            )}
-
+            {profile.cursorEnabled && <CustomCursor color={profile.cursorColor} />}
             <div className="relative z-10 max-w-md mx-auto text-center">
                 {profile.pfpUrl && (
                     <img
@@ -86,8 +68,8 @@ export default function UserProfile() {
     );
 }
 
-// Custom cursor (readonly)
-function CustomCursor({ color = "#0ea5e9", trail = true }) {
+// Minimal custom cursor using plain JS + CSS
+function CustomCursor({ color = "#0ea5e9" }) {
     useEffect(() => {
         const cursor = document.createElement("div");
         cursor.style.position = "fixed";
