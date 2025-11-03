@@ -1,48 +1,44 @@
 import React, { useState, useEffect } from "react";
 
-
-export default function UserDashboard() {
+// You need to pass the logged-in user's username or uid as a prop
+export default function UserDashboard({ username }) {
     const [pfpUrl, setPfpUrl] = useState("");
-    const [username, setUsername] = useState("");
+    const [userName, setUserName] = useState("");
     const [bio, setBio] = useState("");
     const [links, setLinks] = useState("");
-    const [user, setUser] = useState(null);
-
-    // Track logged-in user
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-            if (currentUser) setUser(currentUser);
-            else setUser(null);
-        });
-        return unsubscribe;
-    }, []);
+    const [loading, setLoading] = useState(true);
 
     // Load profile from backend
     useEffect(() => {
-        if (!user) return;
+        if (!username) return;
 
         const fetchProfile = async () => {
             try {
-                const res = await fetch(`https://vanitybackend-43ng.onrender.com/api/getProfile/${user.uid}`);
+                const res = await fetch(`https://vanitybackend-43ng.onrender.com/api/getProfile/${username}`);
                 if (!res.ok) throw new Error("Profile not found");
                 const data = await res.json();
-                setUsername(data.username || "");
+
+                setUserName(data.username || "");
                 setBio(data.bio || "");
                 setLinks((data.links || []).join(", "));
                 setPfpUrl(data.pfpUrl || "");
             } catch (err) {
                 console.error("Failed to fetch profile:", err);
+                alert("Failed to load profile.");
+            } finally {
+                setLoading(false);
             }
         };
 
         fetchProfile();
-    }, [user]);
+    }, [username]);
 
+    // Save profile to backend
     const handleSaveProfile = async () => {
-        if (!user) return alert("You must be logged in to save your profile!");
+        if (!username) return alert("Cannot save profile: no username provided.");
 
         const payload = {
-            username,
+            username: userName,
             bio,
             links: links.split(",").map((l) => l.trim()),
             pfpUrl,
@@ -54,14 +50,18 @@ export default function UserDashboard() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
             });
+
             const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Failed to save profile");
             alert(data.message || "Profile saved!");
         } catch (err) {
-            console.error("Error saving profile:", err);
+            console.error(err);
+            alert("Error saving profile: " + err.message);
         }
     };
 
-    if (!user) return <p className="text-white p-6">Please log in to edit your profile.</p>;
+    if (!username) return <p className="text-white p-6">You must be logged in to edit your profile.</p>;
+    if (loading) return <p className="text-white p-6">Loading profile...</p>;
 
     return (
         <div className="min-h-screen bg-gray-900 text-white p-6">
@@ -70,7 +70,13 @@ export default function UserDashboard() {
 
                 <div className="mb-4">
                     <label className="block mb-2">Profile Picture URL</label>
-                    {pfpUrl && <img src={pfpUrl} alt="Profile" className="w-24 h-24 rounded-full mb-3 object-cover border border-gray-700" />}
+                    {pfpUrl && (
+                        <img
+                            src={pfpUrl}
+                            alt="Profile"
+                            className="w-24 h-24 rounded-full mb-3 object-cover border border-gray-700"
+                        />
+                    )}
                     <input
                         type="text"
                         value={pfpUrl}
@@ -82,20 +88,35 @@ export default function UserDashboard() {
 
                 <div className="mb-4">
                     <label>Username</label>
-                    <input value={username} onChange={(e) => setUsername(e.target.value)} className="w-full p-2 rounded bg-gray-800 border border-gray-700" />
+                    <input
+                        value={userName}
+                        onChange={(e) => setUserName(e.target.value)}
+                        className="w-full p-2 rounded bg-gray-800 border border-gray-700"
+                    />
                 </div>
 
                 <div className="mb-4">
                     <label>Bio</label>
-                    <textarea value={bio} onChange={(e) => setBio(e.target.value)} className="w-full p-2 rounded bg-gray-800 border border-gray-700" />
+                    <textarea
+                        value={bio}
+                        onChange={(e) => setBio(e.target.value)}
+                        className="w-full p-2 rounded bg-gray-800 border border-gray-700"
+                    />
                 </div>
 
                 <div className="mb-4">
                     <label>Links (comma separated)</label>
-                    <input value={links} onChange={(e) => setLinks(e.target.value)} className="w-full p-2 rounded bg-gray-800 border border-gray-700" />
+                    <input
+                        value={links}
+                        onChange={(e) => setLinks(e.target.value)}
+                        className="w-full p-2 rounded bg-gray-800 border border-gray-700"
+                    />
                 </div>
 
-                <button onClick={handleSaveProfile} className="mt-4 px-6 py-3 bg-sky-600 rounded-xl">
+                <button
+                    onClick={handleSaveProfile}
+                    className="mt-4 px-6 py-3 bg-sky-600 rounded-xl"
+                >
                     Save Profile
                 </button>
             </div>
