@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { auth } from "./firebase"; // for tracking logged-in user if you use Firebase Auth client
-import { onAuthStateChanged } from "firebase/auth";
+
 
 export default function UserDashboard() {
     const [pfpUrl, setPfpUrl] = useState("");
