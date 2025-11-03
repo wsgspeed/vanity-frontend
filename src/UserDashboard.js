@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 
 export default function Dashboard() {
     const [activeTab, setActiveTab] = useState("profile");
