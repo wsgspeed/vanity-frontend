@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { doc, setDoc, getDoc } from "firebase/firestore";
-import { db, auth } from "./firebase"; // adjust path
+import { auth } from "./firebase"; // for tracking logged-in user if you use Firebase Auth client
 import { onAuthStateChanged } from "firebase/auth";
 
 export default function UserDashboard() {
@@ -8,44 +7,40 @@ export default function UserDashboard() {
     const [username, setUsername] = useState("");
     const [bio, setBio] = useState("");
     const [links, setLinks] = useState("");
-    const [userId, setUserId] = useState(null);
+    const [user, setUser] = useState(null);
 
     // Track logged-in user
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (user) {
-                setUserId(user.uid);
-            } else {
-                setUserId(null);
-            }
+        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+            if (currentUser) setUser(currentUser);
+            else setUser(null);
         });
         return unsubscribe;
     }, []);
 
-    // Load profile from Firestore when user logs in
+    // Load profile from backend
     useEffect(() => {
-        if (!userId) return;
+        if (!user) return;
 
         const fetchProfile = async () => {
-            const docRef = doc(db, "profiles", userId);
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                setPfpUrl(data.pfpUrl || "");
+            try {
+                const res = await fetch(`https://vanitybackend-43ng.onrender.com/api/getProfile/${user.uid}`);
+                if (!res.ok) throw new Error("Profile not found");
+                const data = await res.json();
                 setUsername(data.username || "");
                 setBio(data.bio || "");
                 setLinks((data.links || []).join(", "));
+                setPfpUrl(data.pfpUrl || "");
+            } catch (err) {
+                console.error("Failed to fetch profile:", err);
             }
         };
 
         fetchProfile();
-    }, [userId]);
+    }, [user]);
 
     const handleSaveProfile = async () => {
-        if (!userId) {
-            alert("You must be logged in to save your profile!");
-            return;
-        }
+        if (!user) return alert("You must be logged in to save your profile!");
 
         const payload = {
             username,
@@ -54,13 +49,20 @@ export default function UserDashboard() {
             pfpUrl,
         };
 
-        await setDoc(doc(db, "profiles", userId), payload);
-        alert("Profile saved!");
+        try {
+            const res = await fetch("https://vanitybackend-43ng.onrender.com/api/saveProfile", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json();
+            alert(data.message || "Profile saved!");
+        } catch (err) {
+            console.error("Error saving profile:", err);
+        }
     };
 
-    if (!userId) {
-        return <p className="text-white p-6">Please log in to edit your profile.</p>;
-    }
+    if (!user) return <p className="text-white p-6">Please log in to edit your profile.</p>;
 
     return (
         <div className="min-h-screen bg-gray-900 text-white p-6">
@@ -69,13 +71,7 @@ export default function UserDashboard() {
 
                 <div className="mb-4">
                     <label className="block mb-2">Profile Picture URL</label>
-                    {pfpUrl && (
-                        <img
-                            src={pfpUrl}
-                            alt="Profile"
-                            className="w-24 h-24 rounded-full mb-3 object-cover border border-gray-700"
-                        />
-                    )}
+                    {pfpUrl && <img src={pfpUrl} alt="Profile" className="w-24 h-24 rounded-full mb-3 object-cover border border-gray-700" />}
                     <input
                         type="text"
                         value={pfpUrl}
@@ -87,35 +83,20 @@ export default function UserDashboard() {
 
                 <div className="mb-4">
                     <label>Username</label>
-                    <input
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        className="w-full p-2 rounded bg-gray-800 border border-gray-700"
-                    />
+                    <input value={username} onChange={(e) => setUsername(e.target.value)} className="w-full p-2 rounded bg-gray-800 border border-gray-700" />
                 </div>
 
                 <div className="mb-4">
                     <label>Bio</label>
-                    <textarea
-                        value={bio}
-                        onChange={(e) => setBio(e.target.value)}
-                        className="w-full p-2 rounded bg-gray-800 border border-gray-700"
-                    />
+                    <textarea value={bio} onChange={(e) => setBio(e.target.value)} className="w-full p-2 rounded bg-gray-800 border border-gray-700" />
                 </div>
 
                 <div className="mb-4">
                     <label>Links (comma separated)</label>
-                    <input
-                        value={links}
-                        onChange={(e) => setLinks(e.target.value)}
-                        className="w-full p-2 rounded bg-gray-800 border border-gray-700"
-                    />
+                    <input value={links} onChange={(e) => setLinks(e.target.value)} className="w-full p-2 rounded bg-gray-800 border border-gray-700" />
                 </div>
 
-                <button
-                    onClick={handleSaveProfile}
-                    className="mt-4 px-6 py-3 bg-sky-600 rounded-xl"
-                >
+                <button onClick={handleSaveProfile} className="mt-4 px-6 py-3 bg-sky-600 rounded-xl">
                     Save Profile
                 </button>
             </div>
