@@ -1,159 +1,222 @@
-﻿import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+﻿import React, { useState, useEffect } from "react";
 
-export default function UserProfile() {
-    const { username } = useParams();
-    const [profile, setProfile] = useState(null);
+export default function UserDashboard() {
+    const [pfpUrl, setPfpUrl] = useState("");
+    const [bannerUrl, setBannerUrl] = useState("");
+    const [userName, setUserName] = useState("");
+    const [bio, setBio] = useState("");
+    const [links, setLinks] = useState("");
+    const [youtubeEmbed, setYoutubeEmbed] = useState("");
+    const [background, setBackground] = useState("");
+    const [cursor, setCursor] = useState("default");
+    const [font, setFont] = useState("sans");
+    const [trail, setTrail] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
+    const storedUser = JSON.parse(localStorage.getItem("vanityUser") || "{}");
+    const uid = storedUser.uid;
+
+    // Redirect after render
     useEffect(() => {
-        const fetchProfile = async () => {
+        if (!uid) {
+            window.location.href = "/login";
+        }
+    }, [uid]);
+
+    // Fetch or create profile
+    useEffect(() => {
+        if (!uid) return;
+
+        const fetchOrCreateProfile = async () => {
             try {
-                const res = await fetch(
-                    `https://vanitybackend-43ng.onrender.com/api/findProfile?username=${username}`
-                );
-                if (!res.ok) throw new Error("Profile not found");
+                let res = await fetch(`https://vanitybackend-43ng.onrender.com/api/getProfile/${uid}`);
+
+                if (res.status === 404) {
+                    await fetch("https://vanitybackend-43ng.onrender.com/api/saveProfile", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            uid,
+                            username: storedUser.username,
+                            bio: "",
+                            links: [],
+                            pfpUrl: "",
+                            bannerUrl: "",
+                        }),
+                    });
+                    res = await fetch(`https://vanitybackend-43ng.onrender.com/api/getProfile/${uid}`);
+                }
+
+                if (!res.ok) throw new Error("Failed to fetch profile");
                 const data = await res.json();
-                setProfile(data);
+
+                setUserName(data.username || "");
+                setBio(data.bio || "");
+                setLinks((data.links || []).join(", "));
+                setPfpUrl(data.pfpUrl || "");
+                setBannerUrl(data.bannerUrl || "");
+                setBackground(data.background || "");
+                setCursor(data.cursor || "default");
+                setFont(data.font || "sans");
+                setTrail(!!data.trail);
             } catch (err) {
                 console.error(err);
-                setProfile(null);
+                setError(err.message);
             } finally {
                 setLoading(false);
             }
         };
-        fetchProfile();
-    }, [username]);
 
-    if (loading)
-        return (
-            <div className="flex justify-center items-center h-screen text-white">
-                Loading profile...
-            </div>
-        );
+        fetchOrCreateProfile();
+    }, [uid, storedUser.username]);
 
-    if (!profile)
-        return (
-            <div className="flex justify-center items-center h-screen text-red-500">
-                Profile not found.
-            </div>
-        );
+    const handleSaveProfile = async () => {
+        if (!uid) return alert("You must be logged in!");
 
-    const {
-        username: uname,
-        bio,
-        pfpUrl,
-        bannerUrl,
-        background,
-        cursor,
-        font,
-        links,
-        youtubeEmbed,
-        trail,
-    } = profile;
+        const payload = {
+            uid,
+            username: userName,
+            bio,
+            links: links.split(",").map((l) => l.trim()),
+            pfpUrl,
+            bannerUrl,
+            youtubeEmbed,
+            background,
+            cursor,
+            font,
+            trail,
+        };
 
-    // Cursor trail
-    useEffect(() => {
-        if (!trail) return;
-        const dots = [];
-        const container = document.createElement("div");
-        container.style.position = "fixed";
-        container.style.top = "0";
-        container.style.left = "0";
-        container.style.pointerEvents = "none";
-        container.style.zIndex = "9999";
-        document.body.appendChild(container);
-
-        for (let i = 0; i < 10; i++) {
-            const dot = document.createElement("div");
-            dot.style.width = dot.style.height = "8px";
-            dot.style.borderRadius = "50%";
-            dot.style.background = "white";
-            dot.style.position = "absolute";
-            dot.style.opacity = `${1 - i / 10}`;
-            container.appendChild(dot);
-            dots.push({ el: dot, x: 0, y: 0 });
-        }
-
-        const move = (e) => {
-            dots[0].x = e.clientX;
-            dots[0].y = e.clientY;
-            for (let i = 1; i < dots.length; i++) {
-                dots[i].x += (dots[i - 1].x - dots[i].x) * 0.3;
-                dots[i].y += (dots[i - 1].y - dots[i].y) * 0.3;
-            }
-            dots.forEach((d) => {
-                d.el.style.transform = `translate(${d.x}px, ${d.y}px)`;
+        try {
+            const res = await fetch("https://vanitybackend-43ng.onrender.com/api/saveProfile", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
             });
-        };
-        window.addEventListener("mousemove", move);
-        return () => {
-            window.removeEventListener("mousemove", move);
-            container.remove();
-        };
-    }, [trail]);
 
-    const fontClasses = {
-        sans: "font-sans",
-        serif: "font-serif",
-        mono: "font-mono",
-        fancy: "italic font-semibold",
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Failed to save profile");
+            alert("✅ Profile saved!");
+        } catch (err) {
+            console.error(err);
+            alert("Error saving profile: " + err.message);
+        }
     };
 
+    if (loading) return <p className="text-white p-6">Loading profile...</p>;
+    if (error) return <p className="text-red-500 p-6">{error}</p>;
+
     return (
-        <div
-            className={`min-h-screen text-white transition-all ${fontClasses[font]}`}
-            style={{
-                background: background?.startsWith("http")
-                    ? `url(${background}) center/cover no-repeat`
-                    : background || "#0f172a",
-                cursor: cursor || "default",
-            }}
-        >
-            {bannerUrl && (
-                <img
-                    src={bannerUrl}
-                    alt="banner"
-                    className="w-full h-40 object-cover"
-                />
-            )}
+        <div className="min-h-screen bg-gray-900 text-white p-6">
+            <div className="max-w-3xl mx-auto space-y-6">
+                <h2 className="text-3xl font-bold text-center mb-4">Dashboard</h2>
 
-            <div className="max-w-xl mx-auto text-center px-4 mt-[-40px]">
-                {pfpUrl && (
-                    <img
-                        src={pfpUrl}
-                        alt="pfp"
-                        className="w-32 h-32 rounded-full border-4 border-white mx-auto object-cover"
-                    />
-                )}
+                <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label className="block mb-2">Profile Picture URL</label>
+                        {pfpUrl && <img src={pfpUrl} alt="pfp" className="w-24 h-24 rounded-full mb-3 object-cover border border-gray-700" />}
+                        <input
+                            type="text"
+                            value={pfpUrl}
+                            onChange={(e) => setPfpUrl(e.target.value)}
+                            placeholder="Enter image URL"
+                            className="w-full p-2 rounded bg-gray-800 border border-gray-700"
+                        />
 
-                <h1 className="text-3xl font-bold mt-3">{uname}</h1>
-                <p className="text-gray-300 mt-1">{bio}</p>
+                        <label className="block mt-4 mb-2">Banner Image URL</label>
+                        {bannerUrl && <img src={bannerUrl} alt="banner" className="w-full h-24 object-cover mb-3 border border-gray-700 rounded" />}
+                        <input
+                            type="text"
+                            value={bannerUrl}
+                            onChange={(e) => setBannerUrl(e.target.value)}
+                            placeholder="Banner image URL"
+                            className="w-full p-2 rounded bg-gray-800 border border-gray-700"
+                        />
 
-                <div className="mt-4 flex flex-col space-y-3">
-                    {(links || []).map((l, i) => (
-                        <a
-                            key={i}
-                            href={l}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="block bg-sky-600 hover:bg-sky-700 py-2 rounded-xl transition"
+                        <label className="block mt-4 mb-2">Username</label>
+                        <input
+                            value={userName}
+                            onChange={(e) => setUserName(e.target.value)}
+                            className="w-full p-2 rounded bg-gray-800 border border-gray-700"
+                        />
+
+                        <label className="block mt-4 mb-2">Bio</label>
+                        <textarea
+                            value={bio}
+                            onChange={(e) => setBio(e.target.value)}
+                            className="w-full p-2 rounded bg-gray-800 border border-gray-700"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block mb-2">Links (comma separated)</label>
+                        <input
+                            value={links}
+                            onChange={(e) => setLinks(e.target.value)}
+                            className="w-full p-2 rounded bg-gray-800 border border-gray-700"
+                        />
+
+                        <label className="block mt-4 mb-2">YouTube Embed URL</label>
+                        <input
+                            value={youtubeEmbed}
+                            onChange={(e) => setYoutubeEmbed(e.target.value)}
+                            placeholder="https://www.youtube.com/embed/..."
+                            className="w-full p-2 rounded bg-gray-800 border border-gray-700"
+                        />
+
+                        <label className="block mt-4 mb-2">Background</label>
+                        <input
+                            value={background}
+                            onChange={(e) => setBackground(e.target.value)}
+                            placeholder="Color hex or image URL"
+                            className="w-full p-2 rounded bg-gray-800 border border-gray-700"
+                        />
+
+                        <label className="block mt-4 mb-2">Cursor</label>
+                        <select
+                            value={cursor}
+                            onChange={(e) => setCursor(e.target.value)}
+                            className="w-full p-2 rounded bg-gray-800 border border-gray-700"
                         >
-                            {l.replace(/^https?:\/\//, "")}
-                        </a>
-                    ))}
+                            <option value="default">Default</option>
+                            <option value="pointer">Pointer</option>
+                            <option value="crosshair">Crosshair</option>
+                            <option value="none">Hidden</option>
+                        </select>
+
+                        <label className="block mt-4 mb-2">Font</label>
+                        <select
+                            value={font}
+                            onChange={(e) => setFont(e.target.value)}
+                            className="w-full p-2 rounded bg-gray-800 border border-gray-700"
+                        >
+                            <option value="sans">Sans</option>
+                            <option value="serif">Serif</option>
+                            <option value="mono">Monospace</option>
+                            <option value="fancy">Fancy</option>
+                        </select>
+
+                        <label className="block mt-4">
+                            <input
+                                type="checkbox"
+                                checked={trail}
+                                onChange={() => setTrail(!trail)}
+                                className="mr-2"
+                            />
+                            Enable Cursor Trail
+                        </label>
+                    </div>
                 </div>
 
-                {youtubeEmbed && (
-                    <div className="mt-6 aspect-video">
-                        <iframe
-                            src={youtubeEmbed}
-                            title="YouTube"
-                            className="w-full h-full rounded-xl"
-                            allowFullScreen
-                        ></iframe>
-                    </div>
-                )}
+                <div className="text-center">
+                    <button
+                        onClick={handleSaveProfile}
+                        className="mt-6 px-8 py-3 bg-sky-600 hover:bg-sky-700 rounded-xl transition"
+                    >
+                        Save Profile
+                    </button>
+                </div>
             </div>
         </div>
     );
