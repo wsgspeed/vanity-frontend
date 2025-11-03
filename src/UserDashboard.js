@@ -10,28 +10,32 @@ export default function UserDashboard() {
 
     // Read logged-in user from localStorage
     const storedUser = JSON.parse(localStorage.getItem("vanityUser") || "{}");
-    const username = storedUser.username;
+    const uid = storedUser.uid;
+
+    // Redirect to login if not logged in
+    useEffect(() => {
+        if (!uid) {
+            window.location.href = "/login";
+        }
+    }, [uid]);
 
     useEffect(() => {
-        if (!username) {
-            setLoading(false);
-            setError("You must be logged in to view the dashboard.");
-            return;
-        }
+        if (!uid) return;
 
         const fetchOrCreateProfile = async () => {
             try {
                 let res = await fetch(
-                    `https://vanitybackend-43ng.onrender.com/api/getProfile/${username}`
+                    `https://vanitybackend-43ng.onrender.com/api/getProfile/${uid}`
                 );
 
-                // If profile not found, create a new one
+                // If profile not found, create a blank one
                 if (res.status === 404) {
                     await fetch("https://vanitybackend-43ng.onrender.com/api/saveProfile", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                            username,
+                            uid,
+                            username: storedUser.username,
                             bio: "",
                             links: [],
                             pfpUrl: null,
@@ -40,11 +44,11 @@ export default function UserDashboard() {
 
                     // Retry fetching after creation
                     res = await fetch(
-                        `https://vanitybackend-43ng.onrender.com/api/getProfile/${username}`
+                        `https://vanitybackend-43ng.onrender.com/api/getProfile/${uid}`
                     );
                 }
 
-                if (!res.ok) throw new Error("Failed to load profile");
+                if (!res.ok) throw new Error("Failed to fetch profile");
 
                 const data = await res.json();
                 setUserName(data.username || "");
@@ -60,12 +64,13 @@ export default function UserDashboard() {
         };
 
         fetchOrCreateProfile();
-    }, [username]);
+    }, [uid, storedUser.username]);
 
     const handleSaveProfile = async () => {
-        if (!username) return alert("You must be logged in!");
+        if (!uid) return alert("You must be logged in!");
 
         const payload = {
+            uid, // use uid as document ID
             username: userName,
             bio,
             links: links.split(",").map((l) => l.trim()),
@@ -153,4 +158,4 @@ export default function UserDashboard() {
             </div>
         </div>
     );
-}// bruh
+}
