@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 
-// This version uses your backend API only.
-// Pass the username prop from login page.
-export default function UserDashboard({ username }) {
+export default function UserDashboard() {
     const [pfpUrl, setPfpUrl] = useState("");
     const [userName, setUserName] = useState("");
     const [bio, setBio] = useState("");
@@ -10,11 +8,14 @@ export default function UserDashboard({ username }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Fetch profile from backend
+    // Read the logged-in user from localStorage
+    const storedUser = JSON.parse(localStorage.getItem("vanityUser") || "{}");
+    const username = storedUser.username;
+
     useEffect(() => {
         if (!username) {
             setLoading(false);
-            setError("No username provided.");
+            setError("You must be logged in to view the dashboard.");
             return;
         }
 
@@ -23,9 +24,7 @@ export default function UserDashboard({ username }) {
                 const res = await fetch(
                     `https://vanitybackend-43ng.onrender.com/api/getProfile/${username}`
                 );
-
                 if (!res.ok) throw new Error("Profile not found");
-
                 const data = await res.json();
 
                 setUserName(data.username || "");
@@ -43,7 +42,6 @@ export default function UserDashboard({ username }) {
         fetchProfile();
     }, [username]);
 
-    // Save profile to backend
     const handleSaveProfile = async () => {
         if (!username) return alert("You must be logged in!");
 
@@ -73,11 +71,8 @@ export default function UserDashboard({ username }) {
         }
     };
 
-    // Render loading/error states
     if (loading) return <p className="text-white p-6">Loading profile...</p>;
     if (error) return <p className="text-red-500 p-6">{error}</p>;
-    if (!username)
-        return <p className="text-white p-6">You must be logged in to edit your profile.</p>;
 
     return (
         <div className="min-h-screen bg-gray-900 text-white p-6">
