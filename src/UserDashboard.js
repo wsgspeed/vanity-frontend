@@ -1,6 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { ChromePicker } from "react-color";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import Particles from "react-tsparticles";
 
@@ -227,9 +225,11 @@ export default function Dashboard() {
                 {activeTab === "settings" && (
                     <div className="space-y-4">
                         <label>Theme Color</label>
-                        <ChromePicker
-                            color={themeColor}
-                            onChangeComplete={(c) => setThemeColor(c.hex)}
+                        <input
+                            type="color"
+                            value={themeColor}
+                            onChange={(e) => setThemeColor(e.target.value)}
+                            className="w-16 h-10 rounded border border-gray-700"
                         />
                         <button
                             onClick={handleSave}
