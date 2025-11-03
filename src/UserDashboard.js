@@ -1,242 +1,217 @@
 import React, { useState, useEffect } from "react";
 
-export default function Dashboard() {
-    const [activeTab, setActiveTab] = useState("profile");
-    const [user, setUser] = useState({ uid: "", username: "" });
-    const [pfpUrl, setPfpUrl] = useState("");
-    const [bio, setBio] = useState("");
-    const [links, setLinks] = useState([{ label: "", url: "" }]);
-    const [themeColor, setThemeColor] = useState("#0ea5e9");
-    const [bgType, setBgType] = useState("color"); // color, gradient, image
-    const [bgColor, setBgColor] = useState("#111111");
-    const [bgGradient, setBgGradient] = useState("linear-gradient(to right, #0ea5e9, #f43f5e)");
-    const [bgImage, setBgImage] = useState("");
-    const [cursorEnabled, setCursorEnabled] = useState(true);
-    const [cursorColor, setCursorColor] = useState("#0ea5e9");
-    const [cursorTrail, setCursorTrail] = useState(true);
+export default function UserDashboard() {
+    const [profile, setProfile] = useState({
+        username: "",
+        bio: "",
+        links: "",
+        pfpUrl: "",
+        background: "default",
+        cursor: "default",
+        glow: false,
+        trail: false,
+    });
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [tab, setTab] = useState("profile");
 
-    // Load user from localStorage
-    useEffect(() => {
-        const stored = JSON.parse(localStorage.getItem("vanityUser") || "{}");
-        if (!stored.uid) window.location.href = "/login";
-        setUser(stored);
-    }, []);
+    const storedUser = JSON.parse(localStorage.getItem("vanityUser") || "{}");
+    const uid = storedUser.uid;
 
-    // Load profile
     useEffect(() => {
-        if (!user.uid) return;
-        const fetchProfile = async () => {
+        if (!uid) return (window.location.href = "/login");
+
+        const loadProfile = async () => {
             try {
-                let res = await fetch(`https://vanitybackend-43ng.onrender.com/api/getProfile/${user.uid}`);
+                let res = await fetch(`https://vanitybackend-43ng.onrender.com/api/getProfile/${uid}`);
                 if (res.status === 404) {
                     await fetch("https://vanitybackend-43ng.onrender.com/api/saveProfile", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            uid: user.uid,
-                            username: user.username,
-                            bio: "",
-                            links: [],
-                            pfpUrl: null,
-                        }),
+                        body: JSON.stringify({ uid, username: storedUser.username, bio: "", links: [], pfpUrl: "" }),
                     });
-                    res = await fetch(`https://vanitybackend-43ng.onrender.com/api/getProfile/${user.uid}`);
+                    res = await fetch(`https://vanitybackend-43ng.onrender.com/api/getProfile/${uid}`);
                 }
-                if (!res.ok) throw new Error("Failed to fetch profile");
                 const data = await res.json();
-                setPfpUrl(data.pfpUrl || "");
-                setBio(data.bio || "");
-                setLinks((data.links || []).map((l) => (typeof l === "string" ? { label: l, url: l } : l)));
-                setThemeColor(data.themeColor || "#0ea5e9");
-                setBgType(data.bgType || "color");
-                setBgColor(data.bgColor || "#111111");
-                setBgGradient(data.bgGradient || "linear-gradient(to right, #0ea5e9, #f43f5e)");
-                setBgImage(data.bgImage || "");
-                setCursorEnabled(data.cursorEnabled ?? true);
-                setCursorColor(data.cursorColor || "#0ea5e9");
-                setCursorTrail(data.cursorTrail ?? true);
-            } catch (err) {
-                setError(err.message);
+                setProfile({
+                    username: data.username || "",
+                    bio: data.bio || "",
+                    links: (data.links || []).join(", "),
+                    pfpUrl: data.pfpUrl || "",
+                    background: data.background || "default",
+                    cursor: data.cursor || "default",
+                    glow: data.glow || false,
+                    trail: data.trail || false,
+                });
+            } catch (e) {
+                console.error(e);
             } finally {
                 setLoading(false);
             }
         };
-        fetchProfile();
-    }, [user.uid]);
 
-    const handleSave = async () => {
+        loadProfile();
+    }, [uid, storedUser.username]);
+
+    const saveProfile = async () => {
         const payload = {
-            uid: user.uid,
-            username: user.username,
-            bio,
-            links: links.map((l) => l.url),
-            pfpUrl,
-            themeColor,
-            bgType,
-            bgColor,
-            bgGradient,
-            bgImage,
-            cursorEnabled,
-            cursorColor,
-            cursorTrail,
+            ...profile,
+            uid,
+            links: profile.links.split(",").map((l) => l.trim()),
         };
-        try {
-            const res = await fetch("https://vanitybackend-43ng.onrender.com/api/saveProfile", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || "Failed to save");
-            alert(data.message || "Saved!");
-        } catch (err) {
-            alert(err.message);
-        }
+        const res = await fetch("https://vanitybackend-43ng.onrender.com/api/saveProfile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        alert(data.message || "Saved!");
     };
 
-    const addLink = () => setLinks([...links, { label: "", url: "" }]);
-    const updateLink = (i, field, value) => {
-        const newLinks = [...links];
-        newLinks[i][field] = value;
-        setLinks(newLinks);
-    };
-    const removeLink = (i) => setLinks(links.filter((_, idx) => idx !== i));
-
-    const handleDragEnd = (result) => {
-        if (!result.destination) return;
-        const newLinks = Array.from(links);
-        const [removed] = newLinks.splice(result.source.index, 1);
-        newLinks.splice(result.destination.index, 0, removed);
-        setLinks(newLinks);
+    const handleChange = (field, value) => {
+        setProfile((p) => ({ ...p, [field]: value }));
     };
 
-    if (loading) return <p className="text-white p-6">Loading...</p>;
-    if (error) return <p className="text-red-500 p-6">{error}</p>;
-
-    // Compute background style
-    let bgStyle = {};
-    if (bgType === "color") bgStyle.backgroundColor = bgColor;
-    else if (bgType === "gradient") bgStyle.backgroundImage = bgGradient;
-    else if (bgType === "image") bgStyle.backgroundImage = `url(${bgImage})`;
+    if (loading) return <p className="text-white p-6">Loading dashboard...</p>;
 
     return (
-        <div className="min-h-screen relative text-white p-6" style={bgStyle}>
-            {cursorEnabled && <CustomCursor color={cursorColor} trail={cursorTrail} />}
-            <Particles
-                className="absolute top-0 left-0 w-full h-full z-0"
-                options={{
-                    fpsLimit: 60,
-                    particles: { number: { value: 50 }, color: { value: themeColor }, move: { enable: true, speed: 2 }, shape: { type: "circle" } },
-                }}
-            />
-            <div className="relative z-10 max-w-5xl mx-auto">
-                <div className="flex mb-6 space-x-4">
-                    {["profile", "links", "appearance", "preview"].map((tab) => (
+        <div className={`min-h-screen text-white relative transition-all duration-500 ${profile.background === "space" ? "bg-gradient-to-b from-gray-900 to-black" :
+                profile.background === "blue" ? "bg-gradient-to-br from-blue-900 to-blue-600" :
+                    profile.background === "pink" ? "bg-gradient-to-br from-pink-900 to-purple-700" :
+                        "bg-gray-900"
+            }`}>
+            {profile.trail && <CursorTrail />}
+            <div className="max-w-4xl mx-auto py-10 px-6">
+                <h1 className="text-3xl font-bold mb-6">Welcome, @{profile.username}</h1>
+
+                <div className="flex space-x-4 border-b border-gray-700 mb-6">
+                    {["profile", "appearance", "settings"].map((t) => (
                         <button
-                            key={tab}
-                            onClick={() => setActiveTab(tab)}
-                            className={`px-4 py-2 rounded-lg ${activeTab === tab ? "bg-sky-600" : "bg-gray-800 hover:bg-gray-700"
+                            key={t}
+                            onClick={() => setTab(t)}
+                            className={`pb-2 capitalize ${tab === t ? "border-b-2 border-sky-500 text-sky-400" : "text-gray-400"
                                 }`}
                         >
-                            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                            {t}
                         </button>
                     ))}
                 </div>
 
-                {activeTab === "profile" && (
-                    <div className="space-y-4">
-                        <input
-                            placeholder="Profile Image URL"
-                            value={pfpUrl}
-                            onChange={(e) => setPfpUrl(e.target.value)}
-                            className="w-full p-2 rounded bg-gray-800 border border-gray-700"
-                        />
-                        <input
-                            placeholder="Bio"
-                            value={bio}
-                            onChange={(e) => setBio(e.target.value)}
-                            className="w-full p-2 rounded bg-gray-800 border border-gray-700"
-                        />
-                        <button onClick={handleSave} className="px-6 py-2 bg-sky-600 rounded-lg">Save Profile</button>
-                    </div>
-                )}
-
-                {activeTab === "links" && (
+                {tab === "profile" && (
                     <div>
-                        <DragDropContext onDragEnd={handleDragEnd}>
-                            <Droppable droppableId="links">
-                                {(provided) => (
-                                    <div {...provided.droppableProps} ref={provided.innerRef}>
-                                        {links.map((link, i) => (
-                                            <Draggable key={i} draggableId={String(i)} index={i}>
-                                                {(prov) => (
-                                                    <div
-                                                        ref={prov.innerRef}
-                                                        {...prov.draggableProps}
-                                                        {...prov.dragHandleProps}
-                                                        className="flex space-x-2 mb-2 items-center"
-                                                    >
-                                                        <input
-                                                            placeholder="Label"
-                                                            value={link.label}
-                                                            onChange={(e) => updateLink(i, "label", e.target.value)}
-                                                            className="flex-1 p-2 rounded bg-gray-800 border border-gray-700"
-                                                        />
-                                                        <input
-                                                            placeholder="URL"
-                                                            value={link.url}
-                                                            onChange={(e) => updateLink(i, "url", e.target.value)}
-                                                            className="flex-2 p-2 rounded bg-gray-800 border border-gray-700"
-                                                        />
-                                                        <button onClick={() => removeLink(i)} className="px-2 py-1 bg-red-600 rounded-lg">X</button>
-                                                    </div>
-                                                )}
-                                            </Draggable>
-                                        ))}
-                                        {provided.placeholder}
-                                    </div>
-                                )}
-                            </Droppable>
-                        </DragDropContext>
-                        <button onClick={addLink} className="px-4 py-2 bg-green-600 rounded-lg mt-2">Add Link</button>
-                        <button onClick={handleSave} className="px-6 py-2 bg-sky-600 rounded-lg mt-2">Save Links</button>
-                    </div>
-                )}
-
-                {activeTab === "appearance" && (
-                    <div className="space-y-4">
-                        <label>Background Type</label>
-                        <select value={bgType} onChange={(e) => setBgType(e.target.value)} className="p-2 rounded bg-gray-800 border border-gray-700">
-                            <option value="color">Color</option>
-                            <option value="gradient">Gradient</option>
-                            <option value="image">Image URL</option>
-                        </select>
-                        {bgType === "color" && <input type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)} className="w-16 h-10 rounded border border-gray-700" />}
-                        {bgType === "gradient" && <input type="text" value={bgGradient} onChange={(e) => setBgGradient(e.target.value)} className="w-full p-2 rounded bg-gray-800 border border-gray-700" placeholder="e.g. linear-gradient(to right, red, blue)" />}
-                        {bgType === "image" && <input type="text" value={bgImage} onChange={(e) => setBgImage(e.target.value)} className="w-full p-2 rounded bg-gray-800 border border-gray-700" placeholder="Image URL" />}
-                        <label>Cursor Enabled <input type="checkbox" checked={cursorEnabled} onChange={(e) => setCursorEnabled(e.target.checked)} className="ml-2" /></label>
-                        {cursorEnabled && (
-                            <>
-                                <label>Cursor Color <input type="color" value={cursorColor} onChange={(e) => setCursorColor(e.target.value)} className="ml-2 w-16 h-10 rounded border border-gray-700" /></label>
-                                <label>Cursor Trail <input type="checkbox" checked={cursorTrail} onChange={(e) => setCursorTrail(e.target.checked)} className="ml-2" /></label>
-                            </>
-                        )}
-                        <button onClick={handleSave} className="px-6 py-2 bg-sky-600 rounded-lg mt-2">Save Appearance</button>
-                    </div>
-                )}
-
-                {activeTab === "preview" && (
-                    <div className="mt-6 p-4 rounded-lg" style={{ backgroundColor: "#111", border: `2px solid ${themeColor}` }}>
-                        <img src={pfpUrl} className="w-24 h-24 rounded-full mx-auto mb-2" alt="profile" />
-                        <h2 className="text-center text-xl mb-2">{user.username}</h2>
-                        <p className="text-center mb-4">{bio}</p>
-                        <div className="space-y-2">
-                            {links.map((l, idx) => (
-                                <a key={idx} href={l.url} target="_blank" rel="noopener noreferrer" className="block py-2 bg-gray-800 hover:bg-sky-700 rounded-lg transition-all">{l.label || l.url}</a>
-                            ))}
+                        <div className="mb-4">
+                            <label className="block text-gray-300 mb-1">Profile Picture URL</label>
+                            <input
+                                className="w-full p-2 rounded bg-gray-800 border border-gray-700"
+                                value={profile.pfpUrl}
+                                onChange={(e) => handleChange("pfpUrl", e.target.value)}
+                            />
                         </div>
+
+                        {profile.pfpUrl && (
+                            <img src={profile.pfpUrl} alt="pfp" className="w-24 h-24 rounded-full mb-3 object-cover" />
+                        )}
+
+                        <div className="mb-4">
+                            <label className="block text-gray-300 mb-1">Username</label>
+                            <input
+                                className="w-full p-2 rounded bg-gray-800 border border-gray-700"
+                                value={profile.username}
+                                onChange={(e) => handleChange("username", e.target.value)}
+                            />
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="block text-gray-300 mb-1">Bio</label>
+                            <textarea
+                                className="w-full p-2 rounded bg-gray-800 border border-gray-700"
+                                value={profile.bio}
+                                onChange={(e) => handleChange("bio", e.target.value)}
+                            />
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="block text-gray-300 mb-1">Links (comma separated)</label>
+                            <input
+                                className="w-full p-2 rounded bg-gray-800 border border-gray-700"
+                                value={profile.links}
+                                onChange={(e) => handleChange("links", e.target.value)}
+                            />
+                        </div>
+
+                        <button onClick={saveProfile} className="px-6 py-3 bg-sky-600 rounded-xl hover:bg-sky-700 transition">
+                            Save Profile
+                        </button>
+                    </div>
+                )}
+
+                {tab === "appearance" && (
+                    <div>
+                        <h2 className="text-xl mb-3">Appearance Settings</h2>
+                        <div className="mb-4">
+                            <label>Background</label>
+                            <select
+                                className="w-full bg-gray-800 p-2 rounded"
+                                value={profile.background}
+                                onChange={(e) => handleChange("background", e.target.value)}
+                            >
+                                <option value="default">Default</option>
+                                <option value="space">Space</option>
+                                <option value="blue">Blue</option>
+                                <option value="pink">Pink</option>
+                            </select>
+                        </div>
+
+                        <div className="mb-4">
+                            <label>Cursor Style</label>
+                            <select
+                                className="w-full bg-gray-800 p-2 rounded"
+                                value={profile.cursor}
+                                onChange={(e) => handleChange("cursor", e.target.value)}
+                            >
+                                <option value="default">Default</option>
+                                <option value="pointer">Pointer</option>
+                                <option value="crosshair">Crosshair</option>
+                                <option value="spark">Spark</option>
+                            </select>
+                        </div>
+
+                        <div className="flex space-x-4 mb-4">
+                            <label className="flex items-center space-x-2">
+                                <input
+                                    type="checkbox"
+                                    checked={profile.glow}
+                                    onChange={(e) => handleChange("glow", e.target.checked)}
+                                />
+                                <span>Enable Glow</span>
+                            </label>
+                            <label className="flex items-center space-x-2">
+                                <input
+                                    type="checkbox"
+                                    checked={profile.trail}
+                                    onChange={(e) => handleChange("trail", e.target.checked)}
+                                />
+                                <span>Cursor Trail</span>
+                            </label>
+                        </div>
+
+                        <button onClick={saveProfile} className="px-6 py-3 bg-sky-600 rounded-xl hover:bg-sky-700">
+                            Save Appearance
+                        </button>
+                    </div>
+                )}
+
+                {tab === "settings" && (
+                    <div>
+                        <h2 className="text-xl mb-3">Account Settings</h2>
+                        <button
+                            onClick={() => {
+                                localStorage.removeItem("vanityUser");
+                                window.location.href = "/login";
+                            }}
+                            className="px-6 py-3 bg-red-600 rounded-xl hover:bg-red-700"
+                        >
+                            Log Out
+                        </button>
                     </div>
                 )}
             </div>
@@ -244,30 +219,29 @@ export default function Dashboard() {
     );
 }
 
-// Simple custom cursor component
-function CustomCursor({ color = "#0ea5e9", trail = true }) {
+function CursorTrail() {
+    const [trail, setTrail] = useState([]);
     useEffect(() => {
-        const cursor = document.createElement("div");
-        cursor.style.position = "fixed";
-        cursor.style.width = "12px";
-        cursor.style.height = "12px";
-        cursor.style.borderRadius = "50%";
-        cursor.style.background = color;
-        cursor.style.pointerEvents = "none";
-        cursor.style.zIndex = "9999";
-        cursor.style.transform = "translate(-50%, -50%)";
-        document.body.appendChild(cursor);
-
         const move = (e) => {
-            cursor.style.left = e.clientX + "px";
-            cursor.style.top = e.clientY + "px";
+            setTrail((t) => [...t.slice(-15), { x: e.clientX, y: e.clientY }]);
         };
-        document.addEventListener("mousemove", move);
-        return () => {
-            document.removeEventListener("mousemove", move);
-            document.body.removeChild(cursor);
-        };
-    }, [color]);
-
-    return null;
+        window.addEventListener("mousemove", move);
+        return () => window.removeEventListener("mousemove", move);
+    }, []);
+    return (
+        <div className="pointer-events-none fixed inset-0 z-50">
+            {trail.map((p, i) => (
+                <div
+                    key={i}
+                    className="absolute w-2 h-2 bg-sky-500 rounded-full opacity-60"
+                    style={{
+                        left: p.x,
+                        top: p.y,
+                        transform: "translate(-50%, -50%)",
+                        animation: "fadeOut 0.5s linear forwards",
+                    }}
+                ></div>
+            ))}
+        </div>
+    );
 }

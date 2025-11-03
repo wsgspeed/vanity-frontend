@@ -3,12 +3,12 @@
   "WorkspaceRootPath": "C:\\Users\\keith\\source\\repos\\vanity-frontend\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\keith\\source\\repos\\vanity-frontend\\src\\UserProfile.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\UserProfile.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\keith\\source\\repos\\vanity-frontend\\src\\UserDashboard.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\UserDashboard.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\keith\\source\\repos\\vanity-frontend\\src\\UserProfile.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\UserProfile.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\keith\\source\\repos\\vanity-frontend\\src\\Login.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
@@ -38,7 +38,7 @@
       "DocumentGroups": [
         {
           "DockedHeight": 534,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Bookmark",
@@ -46,13 +46,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "UserProfile.js",
               "DocumentMoniker": "C:\\Users\\keith\\source\\repos\\vanity-frontend\\src\\UserProfile.js",
               "RelativeDocumentMoniker": "src\\UserProfile.js",
               "ToolTip": "C:\\Users\\keith\\source\\repos\\vanity-frontend\\src\\UserProfile.js",
               "RelativeToolTip": "src\\UserProfile.js",
-              "ViewState": "AgIAAFMAAAAAAAAAAAAgwHMAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAEAAAAAAAAAAAAAowFsAAAAuAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
               "WhenOpened": "2025-11-03T02:44:33.601Z",
               "EditorCaption": ""
@@ -85,13 +85,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
               "Title": "UserDashboard.js",
               "DocumentMoniker": "C:\\Users\\keith\\source\\repos\\vanity-frontend\\src\\UserDashboard.js",
               "RelativeDocumentMoniker": "src\\UserDashboard.js",
               "ToolTip": "C:\\Users\\keith\\source\\repos\\vanity-frontend\\src\\UserDashboard.js",
               "RelativeToolTip": "src\\UserDashboard.js",
-              "ViewState": "AgIAAPIAAAAAAAAAAAAowBMBAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAJEAAAAAAAAAAAAYwLMAAAA1AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
               "WhenOpened": "2025-11-03T02:02:47.768Z",
               "EditorCaption": ""

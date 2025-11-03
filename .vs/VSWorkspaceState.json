@@ -1,7 +1,8 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\src"
   ],
-  "SelectedNode": "\\C:\\Users\\keith\\Source\\Repos\\vanity-frontend",
+  "SelectedNode": "\\src\\UserDashboard.js",
   "PreviewInSolutionExplorer": false
 }
