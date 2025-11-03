@@ -9,7 +9,7 @@ export default function UserProfile() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await fetch(`https://vanitybackend-43ng.onrender.comapi/getProfile/${username}`);
+        const res = await fetch(`https://vanitybackend-43ng.onrender.com/getProfile/${username}`);
         const data = await res.json();
         if (res.ok) setProfile(data);
         setLoading(false);
@@ -66,5 +66,6 @@ export default function UserProfile() {
     </div>
   );
 }
+
 
 
