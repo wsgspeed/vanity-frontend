@@ -5,78 +5,128 @@ export default function UserProfile() {
     const { username } = useParams();
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
 
     useEffect(() => {
-        (async () => {
+        const fetchProfile = async () => {
             try {
-                const res = await fetch(`https://vanitybackend-43ng.onrender.com/api/findProfile?username=${encodeURIComponent(username)}`);
-                if (!res.ok) {
-                    const j = await res.json().catch(() => ({}));
-                    throw new Error(j.message || "Not found");
-                }
+                const res = await fetch(
+                    `https://vanitybackend-43ng.onrender.com/api/findProfile?username=${username}`
+                );
+                if (!res.ok) throw new Error("Profile not found");
                 const data = await res.json();
-                if (!data) throw new Error("Not found");
-                setProfile({
-                    username: data.username,
-                    bio: data.bio || "",
-                    pfpUrl: data.pfpUrl || "",
-                    bannerUrl: data.bannerUrl || "",
-                    backgroundType: data.backgroundType || "gradient",
-                    backgroundValue: data.backgroundValue || "linear-gradient(135deg,#0ea5e9,#9333ea)",
-                    accentColor: data.accentColor || "#0ea5e9",
-                    fontFamily: data.fontFamily || "system-ui",
-                    buttonStyle: data.buttonStyle || "rounded",
-                    cursorStyle: data.cursorStyle || "default",
-                    cursorTrail: data.cursorTrail ?? true,
-                    glow: data.glow ?? true,
-                    songUrl: data.songUrl || "",
-                    autoplaySong: data.autoplaySong || false,
-                    layout: data.layout || "centered",
-                    sections: (data.sections || []).map(s => ({ title: s.title, links: (s.links || []).map(l => typeof l === "string" ? l : (l.url || l.label || "")) }))
-                });
-            } catch (e) {
-                console.error(e);
-                setError(String(e));
+                setProfile(data);
+            } catch (err) {
+                console.error(err);
+                setProfile(null);
             } finally {
                 setLoading(false);
             }
-        })();
+        };
+        fetchProfile();
     }, [username]);
 
-    if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-300">Loading...</div>;
-    if (error || !profile) return <div className="min-h-screen flex items-center justify-center text-gray-400">404 - Profile not found</div>;
+    if (loading)
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-black text-white">
+                Loading profile...
+            </div>
+        );
 
-    const bgStyle = {};
-    if (profile.backgroundType === "color") bgStyle.background = profile.backgroundValue;
-    else if (profile.backgroundType === "gradient") bgStyle.backgroundImage = profile.backgroundValue;
-    else if (profile.backgroundType === "image") bgStyle.backgroundImage = `url(${profile.backgroundValue})`;
+    if (!profile)
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-black text-gray-300">
+                404 — User not found.
+            </div>
+        );
 
     return (
-        <div className="min-h-screen p-8" style={{ ...bgStyle, color: "#fff", fontFamily: profile.fontFamily }}>
-            {profile.cursorTrail && <CursorTrail color={profile.accentColor} />}
-            <div className="max-w-2xl mx-auto text-center">
-                {profile.bannerUrl && <img src={profile.bannerUrl} alt="banner" className="w-full h-48 object-cover rounded mb-4" style={{ boxShadow: profile.glow ? `0 0 24px ${profile.accentColor}` : undefined }} />}
-                {profile.pfpUrl && <img src={profile.pfpUrl} alt="pfp" className="w-28 h-28 rounded-full mx-auto mb-3" style={{ boxShadow: profile.glow ? `0 0 20px ${profile.accentColor}` : undefined }} />}
-                <h1 className="text-3xl font-bold mb-2">@{profile.username}</h1>
-                {profile.bio && <p className="text-gray-200 mb-6">{profile.bio}</p>}
-                {profile.songUrl && <div className="mb-4"><audio controls src={profile.songUrl} preload="auto" /></div>}
-                <div className={`space-y-3 ${profile.layout === "grid" ? "grid grid-cols-2 gap-3" : "flex flex-col"}`}>
-                    {(profile.sections || []).flatMap(s => s.links || []).map((link, i) => (
-                        <a key={i} href={link} target="_blank" rel="noreferrer" className="block bg-gray-900 py-3 rounded-xl hover:bg-sky-600 transition">{link}</a>
+        <div
+            className="min-h-screen flex flex-col items-center text-center"
+            style={{
+                background: profile.background || "#0a0a0a",
+                color: "#fff",
+                fontFamily: profile.font || "Arial, sans-serif",
+                cursor:
+                    profile.cursor && profile.cursor !== "default"
+                        ? `url(${profile.cursor}), auto`
+                        : "auto",
+            }}
+        >
+            {profile.bannerUrl && (
+                <img
+                    src={profile.bannerUrl}
+                    alt="Banner"
+                    className="w-full h-40 object-cover"
+                />
+            )}
+
+            <div className="max-w-md w-full mt-[-40px] bg-black/70 p-6 rounded-2xl shadow-lg border border-gray-700">
+                {profile.pfpUrl && (
+                    <img
+                        src={profile.pfpUrl}
+                        alt="Profile"
+                        className={`w-28 h-28 rounded-full mx-auto mb-4 object-cover border-4 ${profile.glow ? "border-sky-500 shadow-lg shadow-sky-500/30" : ""
+                            }`}
+                    />
+                )}
+
+                <h1 className="text-3xl font-bold">{profile.displayName}</h1>
+                <p className="text-gray-400">@{profile.username}</p>
+
+                {profile.bio && (
+                    <p className="text-gray-300 mt-3 px-2">{profile.bio}</p>
+                )}
+
+                {profile.youtube && (
+                    <div className="mt-6 aspect-video rounded-lg overflow-hidden">
+                        <iframe
+                            className="w-full h-full"
+                            src={`https://www.youtube.com/embed/${profile.youtube
+                                .split("v=")[1]
+                                ?.split("&")[0]}`}
+                            title="YouTube Video"
+                            allowFullScreen
+                        />
+                    </div>
+                )}
+
+                <div className="mt-6 space-y-3">
+                    {(profile.links || []).map((link, i) => (
+                        <a
+                            key={i}
+                            href={link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block bg-gray-800 py-3 rounded-xl hover:bg-sky-700 transition-all"
+                        >
+                            {link}
+                        </a>
                     ))}
                 </div>
             </div>
+
+            {profile.trail && (
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: `
+              document.addEventListener("mousemove", function(e) {
+                const dot = document.createElement("div");
+                dot.style.position = "fixed";
+                dot.style.left = e.clientX + "px";
+                dot.style.top = e.clientY + "px";
+                dot.style.width = "6px";
+                dot.style.height = "6px";
+                dot.style.borderRadius = "50%";
+                dot.style.background = "#0ff";
+                dot.style.pointerEvents = "none";
+                dot.style.opacity = "0.7";
+                document.body.appendChild(dot);
+                setTimeout(() => dot.remove(), 300);
+              });
+            `,
+                    }}
+                />
+            )}
         </div>
     );
-}
-
-function CursorTrail({ color = "#0ea5e9" }) {
-    const [dots, setDots] = useState([]);
-    useEffect(() => {
-        const onMove = e => setDots(d => [...d.slice(-18), { x: e.clientX, y: e.clientY, id: Math.random() }]);
-        window.addEventListener("mousemove", onMove);
-        return () => window.removeEventListener("mousemove", onMove);
-    }, []);
-    return <div className="pointer-events-none fixed inset-0 z-50">{dots.map(d => <div key={d.id} style={{ position: "absolute", left: d.x, top: d.y, transform: "translate(-50%,-50%)", width: 8, height: 8, background: color, borderRadius: 999, opacity: 0.7 }} />)}</div>;
 }
