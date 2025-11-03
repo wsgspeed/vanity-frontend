@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 
-// Pass the logged-in username from your login logic
+// This version uses your backend API only.
+// Pass the username prop from login page.
 export default function UserDashboard({ username }) {
     const [pfpUrl, setPfpUrl] = useState("");
     const [userName, setUserName] = useState("");
@@ -13,6 +14,7 @@ export default function UserDashboard({ username }) {
     useEffect(() => {
         if (!username) {
             setLoading(false);
+            setError("No username provided.");
             return;
         }
 
@@ -21,7 +23,9 @@ export default function UserDashboard({ username }) {
                 const res = await fetch(
                     `https://vanitybackend-43ng.onrender.com/api/getProfile/${username}`
                 );
+
                 if (!res.ok) throw new Error("Profile not found");
+
                 const data = await res.json();
 
                 setUserName(data.username || "");
@@ -59,6 +63,7 @@ export default function UserDashboard({ username }) {
                     body: JSON.stringify(payload),
                 }
             );
+
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Failed to save profile");
             alert(data.message || "Profile saved!");
@@ -68,6 +73,7 @@ export default function UserDashboard({ username }) {
         }
     };
 
+    // Render loading/error states
     if (loading) return <p className="text-white p-6">Loading profile...</p>;
     if (error) return <p className="text-red-500 p-6">{error}</p>;
     if (!username)
