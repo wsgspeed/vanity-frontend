@@ -41,7 +41,7 @@ export default function UserProfile() {
 
     return (
         <div
-            className="min-h-screen flex flex-col items-center text-center"
+            className="min-h-screen flex flex-col items-center text-center p-4"
             style={{
                 background: profile.background || "#0a0a0a",
                 color: "#fff",
@@ -56,7 +56,7 @@ export default function UserProfile() {
                 <img
                     src={profile.bannerUrl}
                     alt="Banner"
-                    className="w-full h-40 object-cover"
+                    className="w-full h-40 object-cover rounded-b-2xl"
                 />
             )}
 
@@ -72,18 +72,14 @@ export default function UserProfile() {
 
                 <h1 className="text-3xl font-bold">{profile.displayName}</h1>
                 <p className="text-gray-400">@{profile.username}</p>
-
-                {profile.bio && (
-                    <p className="text-gray-300 mt-3 px-2">{profile.bio}</p>
-                )}
+                {profile.bio && <p className="text-gray-300 mt-3 px-2">{profile.bio}</p>}
 
                 {profile.youtube && (
                     <div className="mt-6 aspect-video rounded-lg overflow-hidden">
                         <iframe
                             className="w-full h-full"
-                            src={`https://www.youtube.com/embed/${profile.youtube
-                                .split("v=")[1]
-                                ?.split("&")[0]}`}
+                            src={`https://www.youtube.com/embed/${profile.youtube.split("v=")[1]?.split("&")[0]
+                                }`}
                             title="YouTube Video"
                             allowFullScreen
                         />

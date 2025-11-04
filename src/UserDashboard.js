@@ -18,7 +18,15 @@ export default function UserDashboard({ uid }) {
     });
     const [newLink, setNewLink] = useState("");
 
-    // 🔹 Load saved profile
+    const fonts = [
+        "Arial",
+        "Verdana",
+        "Courier New",
+        "Georgia",
+        "Times New Roman",
+        "Comic Sans MS",
+    ];
+
     useEffect(() => {
         if (!uid) return;
         fetch(`https://vanitybackend-43ng.onrender.com/api/getProfile/${uid}`)
@@ -27,7 +35,6 @@ export default function UserDashboard({ uid }) {
             .catch(() => { });
     }, [uid]);
 
-    // 🔹 Save to backend
     const saveProfile = async () => {
         await fetch("https://vanitybackend-43ng.onrender.com/api/saveProfile", {
             method: "POST",
@@ -37,17 +44,20 @@ export default function UserDashboard({ uid }) {
         alert("✅ Profile saved!");
     };
 
-    const fonts = ["Arial", "Verdana", "Courier New", "Georgia", "Times New Roman", "Comic Sans MS"];
-
     return (
-        <div className="min-h-screen bg-[#050505] text-white flex flex-col items-center p-6">
-            <h1 className="text-3xl font-bold mb-6">User Dashboard</h1>
+        <div
+            className="min-h-screen flex flex-col items-center p-6"
+            style={{ background: profile.background }}
+        >
+            <h1 className="text-3xl font-bold mb-6 text-white">User Dashboard</h1>
 
-            <div className="flex space-x-3 mb-6">
+            <div className="flex flex-wrap justify-center gap-3 mb-6">
                 {["profile", "design", "links", "media"].map((t) => (
                     <button
                         key={t}
-                        className={`px-4 py-2 rounded-xl ${tab === t ? "bg-sky-600" : "bg-gray-700 hover:bg-gray-600"
+                        className={`px-5 py-2 rounded-xl font-semibold ${tab === t
+                                ? "bg-sky-600 text-white"
+                                : "bg-gray-700 text-gray-200 hover:bg-gray-600"
                             }`}
                         onClick={() => setTab(t)}
                     >
@@ -62,32 +72,42 @@ export default function UserDashboard({ uid }) {
                     <input
                         placeholder="Username"
                         value={profile.username}
-                        onChange={(e) => setProfile({ ...profile, username: e.target.value })}
-                        className="w-full bg-gray-800 p-3 rounded-xl"
+                        onChange={(e) =>
+                            setProfile({ ...profile, username: e.target.value })
+                        }
+                        className="w-full bg-gray-800 p-3 rounded-xl text-white"
                     />
                     <input
                         placeholder="Display Name"
                         value={profile.displayName}
-                        onChange={(e) => setProfile({ ...profile, displayName: e.target.value })}
-                        className="w-full bg-gray-800 p-3 rounded-xl"
+                        onChange={(e) =>
+                            setProfile({ ...profile, displayName: e.target.value })
+                        }
+                        className="w-full bg-gray-800 p-3 rounded-xl text-white"
                     />
                     <textarea
                         placeholder="Bio"
                         value={profile.bio}
-                        onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
-                        className="w-full bg-gray-800 p-3 rounded-xl h-24"
+                        onChange={(e) =>
+                            setProfile({ ...profile, bio: e.target.value })
+                        }
+                        className="w-full bg-gray-800 p-3 rounded-xl h-24 text-white"
                     />
                     <input
                         placeholder="Profile Picture URL"
                         value={profile.pfpUrl}
-                        onChange={(e) => setProfile({ ...profile, pfpUrl: e.target.value })}
-                        className="w-full bg-gray-800 p-3 rounded-xl"
+                        onChange={(e) =>
+                            setProfile({ ...profile, pfpUrl: e.target.value })
+                        }
+                        className="w-full bg-gray-800 p-3 rounded-xl text-white"
                     />
                     <input
                         placeholder="Banner Image URL"
                         value={profile.bannerUrl}
-                        onChange={(e) => setProfile({ ...profile, bannerUrl: e.target.value })}
-                        className="w-full bg-gray-800 p-3 rounded-xl"
+                        onChange={(e) =>
+                            setProfile({ ...profile, bannerUrl: e.target.value })
+                        }
+                        className="w-full bg-gray-800 p-3 rounded-xl text-white"
                     />
                 </div>
             )}
@@ -95,19 +115,23 @@ export default function UserDashboard({ uid }) {
             {/* DESIGN TAB */}
             {tab === "design" && (
                 <div className="w-full max-w-lg space-y-4">
-                    <label className="block">Background Color</label>
+                    <label className="block text-white">Background Color</label>
                     <input
                         type="color"
                         value={profile.background}
-                        onChange={(e) => setProfile({ ...profile, background: e.target.value })}
+                        onChange={(e) =>
+                            setProfile({ ...profile, background: e.target.value })
+                        }
                         className="w-full h-10 rounded-xl cursor-pointer"
                     />
 
-                    <label className="block">Font</label>
+                    <label className="block text-white">Font</label>
                     <select
                         value={profile.font}
-                        onChange={(e) => setProfile({ ...profile, font: e.target.value })}
-                        className="w-full bg-gray-800 p-3 rounded-xl"
+                        onChange={(e) =>
+                            setProfile({ ...profile, font: e.target.value })
+                        }
+                        className="w-full bg-gray-800 p-3 rounded-xl text-white"
                     >
                         {fonts.map((f) => (
                             <option key={f} value={f}>
@@ -116,20 +140,24 @@ export default function UserDashboard({ uid }) {
                         ))}
                     </select>
 
-                    <label className="block">Cursor URL (optional)</label>
+                    <label className="block text-white">Cursor URL (optional)</label>
                     <input
                         placeholder="Custom cursor URL"
                         value={profile.cursor}
-                        onChange={(e) => setProfile({ ...profile, cursor: e.target.value })}
-                        className="w-full bg-gray-800 p-3 rounded-xl"
+                        onChange={(e) =>
+                            setProfile({ ...profile, cursor: e.target.value })
+                        }
+                        className="w-full bg-gray-800 p-3 rounded-xl text-white"
                     />
 
-                    <div className="flex space-x-4 mt-4">
+                    <div className="flex space-x-6 mt-4 text-white">
                         <label className="flex items-center space-x-2">
                             <input
                                 type="checkbox"
                                 checked={profile.glow}
-                                onChange={(e) => setProfile({ ...profile, glow: e.target.checked })}
+                                onChange={(e) =>
+                                    setProfile({ ...profile, glow: e.target.checked })
+                                }
                             />
                             <span>Glow</span>
                         </label>
@@ -137,7 +165,9 @@ export default function UserDashboard({ uid }) {
                             <input
                                 type="checkbox"
                                 checked={profile.trail}
-                                onChange={(e) => setProfile({ ...profile, trail: e.target.checked })}
+                                onChange={(e) =>
+                                    setProfile({ ...profile, trail: e.target.checked })
+                                }
                             />
                             <span>Cursor Trail</span>
                         </label>
@@ -153,18 +183,15 @@ export default function UserDashboard({ uid }) {
                             placeholder="Add link (https://...)"
                             value={newLink}
                             onChange={(e) => setNewLink(e.target.value)}
-                            className="flex-grow bg-gray-800 p-3 rounded-xl"
+                            className="flex-grow bg-gray-800 p-3 rounded-xl text-white"
                         />
                         <button
                             onClick={() => {
                                 if (!newLink) return;
-                                setProfile({
-                                    ...profile,
-                                    links: [...profile.links, newLink],
-                                });
+                                setProfile({ ...profile, links: [...profile.links, newLink] });
                                 setNewLink("");
                             }}
-                            className="bg-sky-600 px-4 rounded-xl"
+                            className="bg-sky-600 px-4 rounded-xl text-white"
                         >
                             Add
                         </button>
@@ -173,7 +200,7 @@ export default function UserDashboard({ uid }) {
                         {profile.links.map((l, i) => (
                             <div
                                 key={i}
-                                className="flex justify-between items-center bg-gray-800 px-3 py-2 rounded-xl"
+                                className="flex justify-between items-center bg-gray-800 px-3 py-2 rounded-xl text-white"
                             >
                                 <span className="truncate">{l}</span>
                                 <button
@@ -183,7 +210,7 @@ export default function UserDashboard({ uid }) {
                                             links: profile.links.filter((_, idx) => idx !== i),
                                         })
                                     }
-                                    className="text-red-400"
+                                    className="text-red-400 font-bold"
                                 >
                                     ✕
                                 </button>
@@ -199,15 +226,17 @@ export default function UserDashboard({ uid }) {
                     <input
                         placeholder="YouTube Video URL"
                         value={profile.youtube}
-                        onChange={(e) => setProfile({ ...profile, youtube: e.target.value })}
-                        className="w-full bg-gray-800 p-3 rounded-xl"
+                        onChange={(e) =>
+                            setProfile({ ...profile, youtube: e.target.value })
+                        }
+                        className="w-full bg-gray-800 p-3 rounded-xl text-white"
                     />
                 </div>
             )}
 
             <button
                 onClick={saveProfile}
-                className="mt-8 bg-sky-600 hover:bg-sky-700 px-6 py-3 rounded-xl"
+                className="mt-8 bg-sky-600 hover:bg-sky-700 px-6 py-3 rounded-xl text-white font-semibold"
             >
                 Save Changes
             </button>
