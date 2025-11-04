@@ -1,5 +1,11 @@
 ﻿import React, { useState, useEffect } from "react";
-import UserProfile from "./UserProfile"; // import the profile preview component
+
+// Dummy Counter class for demonstration; replace with your CounterAPI instance
+class Counter {
+    constructor({ workspace }) { this.workspace = workspace; }
+    async get(name) { return { data: { value: Math.floor(Math.random() * 1000) } }; }
+    async up(name) { return { data: { up_count: Math.floor(Math.random() * 1000) } }; }
+}
 
 export default function UserDashboard({ uid }) {
     const [profile, setProfile] = useState({
@@ -8,249 +14,227 @@ export default function UserDashboard({ uid }) {
         bio: "",
         pfpUrl: "",
         bannerUrl: "",
-        backgroundVideo: "",
-        backgroundMusic: "",
+        background: "#000000",
         cursor: "",
         glow: true,
         trail: true,
         font: "Courier New",
-        socialLinks: [
-            // Example: { icon: "discord.png", url: "https://discord.gg/temeria", title: "Discord" }
+        youtube: "",
+        links: [],
+        badges: [
+            { src: "/assets/staff.png", title: "Staff" },
+            { src: "/assets/active_developer.png", title: "Active Developer" },
+            { src: "/assets/quests.png", title: "Quests" },
+            { src: "/assets/nitro.png", title: "Nitro" }
         ],
         skills: [
-            // Example: { name: "Python", percentage: 87, icon: "" }
+            { name: "Python", value: 87, color: "linear-gradient(90deg, #ff6b6b, #ff9f9f)" },
+            { name: "C++", value: 75, color: "linear-gradient(90deg, #4facfe, #00f2fe)" },
+            { name: "C#", value: 80, color: "linear-gradient(90deg, #43e97b, #38f9d7)" }
         ],
+        visitorCount: 0
     });
 
-    const [newLink, setNewLink] = useState({ icon: "", url: "", title: "" });
-    const [newSkill, setNewSkill] = useState({ name: "", percentage: 50, icon: "" });
+    const [newLink, setNewLink] = useState("");
 
-    // Load saved profile from backend
+    // Load profile from backend
     useEffect(() => {
         if (!uid) return;
         fetch(`https://vanitybackend-43ng.onrender.com/api/getProfile/${uid}`)
-            .then((res) => res.ok ? res.json() : null)
+            .then((res) => (res.ok ? res.json() : null))
             .then((data) => data && setProfile((p) => ({ ...p, ...data })))
             .catch(() => { });
     }, [uid]);
 
-    // Save profile to backend
+    // Load Discord info (avatar/banner)
+    useEffect(() => {
+        async function fetchDiscord() {
+            if (!uid) return;
+            try {
+                const res = await fetch(`https://api.lanyard.rest/v1/users/${uid}`);
+                const data = await res.json();
+                const user = data.data.discord_user;
+                const avatarFormat = user.avatar.startsWith("a_") ? "gif" : "png";
+                const avatarUrl = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${avatarFormat}`;
+
+                const bannerRes = await fetch(`https://discordlookup.mesalytic.moe/v1/user/${uid}`);
+                const bannerData = await bannerRes.json();
+                const bannerUrl = bannerData.banner?.link || "/assets/def_banner.webp";
+
+                setProfile((prev) => ({
+                    ...prev,
+                    username: user.username,
+                    displayName: user.username,
+                    pfpUrl: avatarUrl,
+                    bannerUrl: bannerUrl
+                }));
+            } catch (err) {
+                console.error(err);
+            }
+        }
+        fetchDiscord();
+    }, [uid]);
+
+    // Load visitor count
+    useEffect(() => {
+        async function fetchVisitorCount() {
+            const counter = new Counter({ workspace: "counter" });
+            try {
+                const result = await counter.get("cuner");
+                setProfile((prev) => ({ ...prev, visitorCount: result.data.value || 0 }));
+            } catch (err) {
+                console.error("Visitor count error:", err);
+            }
+        }
+        fetchVisitorCount();
+    }, []);
+
+    const addLink = () => {
+        if (!newLink) return;
+        setProfile((prev) => ({ ...prev, links: [...prev.links, newLink] }));
+        setNewLink("");
+    };
+
+    const removeLink = (idx) => {
+        setProfile((prev) => ({ ...prev, links: prev.links.filter((_, i) => i !== idx) }));
+    };
+
     const saveProfile = async () => {
         await fetch("https://vanitybackend-43ng.onrender.com/api/saveProfile", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ uid, ...profile }),
+            body: JSON.stringify(profile)
         });
-        alert("✅ Profile saved!");
+        alert("Profile saved!");
     };
 
     return (
-        <div className="min-h-screen bg-black text-white p-6 flex flex-col items-center">
-            <h1 className="text-3xl font-bold mb-6">User Dashboard</h1>
+        <div className="min-h-screen flex flex-col items-center p-6" style={{ background: "#050505" }}>
+            <h1 className="text-3xl font-bold mb-6 text-white">User Dashboard</h1>
 
-            <div className="flex flex-col md:flex-row gap-6 w-full max-w-6xl">
-                {/* --- Settings Form --- */}
-                <div className="flex-1 space-y-6">
-                    {/* Profile */}
-                    <div className="bg-gray-900 p-4 rounded-xl space-y-4">
-                        <h2 className="text-xl font-semibold">Profile</h2>
-                        <input
-                            placeholder="Username"
-                            value={profile.username}
-                            onChange={(e) => setProfile({ ...profile, username: e.target.value })}
-                            className="w-full p-3 rounded-xl bg-gray-800"
-                        />
-                        <input
-                            placeholder="Display Name"
-                            value={profile.displayName}
-                            onChange={(e) => setProfile({ ...profile, displayName: e.target.value })}
-                            className="w-full p-3 rounded-xl bg-gray-800"
-                        />
-                        <textarea
-                            placeholder="Bio"
-                            value={profile.bio}
-                            onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
-                            className="w-full p-3 rounded-xl bg-gray-800"
-                            rows={4}
-                        />
-                        <input
-                            placeholder="Profile Picture URL"
-                            value={profile.pfpUrl}
-                            onChange={(e) => setProfile({ ...profile, pfpUrl: e.target.value })}
-                            className="w-full p-3 rounded-xl bg-gray-800"
-                        />
-                        <input
-                            placeholder="Banner URL"
-                            value={profile.bannerUrl}
-                            onChange={(e) => setProfile({ ...profile, bannerUrl: e.target.value })}
-                            className="w-full p-3 rounded-xl bg-gray-800"
-                        />
+            {/* Profile Preview */}
+            <div
+                className="w-full max-w-3xl p-6 rounded-xl mb-6"
+                style={{
+                    background: "rgba(0,0,0,0.7)",
+                    backdropFilter: "blur(10px)",
+                    color: "#fff",
+                    fontFamily: profile.font,
+                    cursor: profile.cursor || "auto"
+                }}
+            >
+                <div className="profile-header relative flex gap-4" style={{ backgroundImage: `url(${profile.bannerUrl})`, height: 160, borderRadius: 25 }}>
+                    <div className="profile-container relative w-36 h-36">
+                        <img src={profile.pfpUrl} className="rounded-full w-full h-full object-cover" />
                     </div>
+                    <div className="flex-1 flex flex-col justify-center">
+                        <div className="flex justify-between items-center mb-2">
+                            <h2 className="text-2xl font-bold">{profile.displayName}</h2>
+                            <div className="flex gap-2">
+                                {profile.badges.map((b, i) => (
+                                    <div key={i} className="relative">
+                                        <img src={b.src} alt={b.title} className="w-6 h-6" />
+                                        <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 bg-black/80 text-white text-xs px-1 rounded opacity-0 hover:opacity-100">
+                                            {b.title}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div>{profile.bio}</div>
+                    </div>
+                </div>
 
-                    {/* Design */}
-                    <div className="bg-gray-900 p-4 rounded-xl space-y-4">
-                        <h2 className="text-xl font-semibold">Design</h2>
-                        <label className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
-                                checked={profile.glow}
-                                onChange={(e) => setProfile({ ...profile, glow: e.target.checked })}
-                            />
-                            Glow
-                        </label>
-                        <label className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
-                                checked={profile.trail}
-                                onChange={(e) => setProfile({ ...profile, trail: e.target.checked })}
-                            />
-                            Cursor Trail
-                        </label>
+                <div className="mt-4 flex flex-wrap gap-3">
+                    {profile.links.map((link, i) => (
+                        <a key={i} href={link} target="_blank" className="bg-gray-800 px-3 py-1 rounded">{link}</a>
+                    ))}
+                </div>
+
+                <div className="mt-4">
+                    <strong>Profile Views:</strong> {profile.visitorCount}
+                </div>
+
+                <div className="mt-4 flex gap-2">
+                    <input
+                        value={newLink}
+                        onChange={(e) => setNewLink(e.target.value)}
+                        placeholder="Add link"
+                        className="p-2 rounded bg-gray-800 text-white flex-1"
+                    />
+                    <button onClick={addLink} className="bg-sky-600 px-4 rounded">Add</button>
+                </div>
+            </div>
+
+            {/* Settings */}
+            <div className="w-full max-w-3xl bg-gray-900 p-6 rounded-xl space-y-4 text-white">
+                <input
+                    placeholder="Display Name"
+                    value={profile.displayName}
+                    onChange={(e) => setProfile({ ...profile, displayName: e.target.value })}
+                    className="w-full p-2 rounded bg-gray-800"
+                />
+                <textarea
+                    placeholder="Bio"
+                    value={profile.bio}
+                    onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+                    className="w-full p-2 rounded bg-gray-800"
+                />
+                <input
+                    placeholder="Profile Picture URL"
+                    value={profile.pfpUrl}
+                    onChange={(e) => setProfile({ ...profile, pfpUrl: e.target.value })}
+                    className="w-full p-2 rounded bg-gray-800"
+                />
+                <input
+                    placeholder="Banner URL"
+                    value={profile.bannerUrl}
+                    onChange={(e) => setProfile({ ...profile, bannerUrl: e.target.value })}
+                    className="w-full p-2 rounded bg-gray-800"
+                />
+
+                <div className="flex gap-2">
+                    <label>
+                        Cursor URL:
                         <input
-                            placeholder="Custom Cursor URL"
                             value={profile.cursor}
                             onChange={(e) => setProfile({ ...profile, cursor: e.target.value })}
-                            className="w-full p-3 rounded-xl bg-gray-800"
+                            className="p-1 rounded bg-gray-800 ml-2"
                         />
+                    </label>
+                    <label>
+                        Background:
                         <input
-                            placeholder="Font"
-                            value={profile.font}
-                            onChange={(e) => setProfile({ ...profile, font: e.target.value })}
-                            className="w-full p-3 rounded-xl bg-gray-800"
+                            type="color"
+                            value={profile.background}
+                            onChange={(e) => setProfile({ ...profile, background: e.target.value })}
+                            className="ml-2 w-12 h-8 cursor-pointer"
                         />
-                        <input
-                            placeholder="Background Video URL"
-                            value={profile.backgroundVideo}
-                            onChange={(e) => setProfile({ ...profile, backgroundVideo: e.target.value })}
-                            className="w-full p-3 rounded-xl bg-gray-800"
-                        />
-                        <input
-                            placeholder="Background Music URL"
-                            value={profile.backgroundMusic}
-                            onChange={(e) => setProfile({ ...profile, backgroundMusic: e.target.value })}
-                            className="w-full p-3 rounded-xl bg-gray-800"
-                        />
-                    </div>
-
-                    {/* Social Links */}
-                    <div className="bg-gray-900 p-4 rounded-xl space-y-4">
-                        <h2 className="text-xl font-semibold">Social Links</h2>
-                        <div className="flex gap-2">
-                            <input
-                                placeholder="Icon URL"
-                                value={newLink.icon}
-                                onChange={(e) => setNewLink({ ...newLink, icon: e.target.value })}
-                                className="flex-1 p-2 rounded bg-gray-800"
-                            />
-                            <input
-                                placeholder="Title"
-                                value={newLink.title}
-                                onChange={(e) => setNewLink({ ...newLink, title: e.target.value })}
-                                className="flex-1 p-2 rounded bg-gray-800"
-                            />
-                            <input
-                                placeholder="Link URL"
-                                value={newLink.url}
-                                onChange={(e) => setNewLink({ ...newLink, url: e.target.value })}
-                                className="flex-1 p-2 rounded bg-gray-800"
-                            />
-                            <button
-                                onClick={() => {
-                                    if (!newLink.url) return;
-                                    setProfile({ ...profile, socialLinks: [...profile.socialLinks, newLink] });
-                                    setNewLink({ icon: "", url: "", title: "" });
-                                }}
-                                className="bg-sky-600 px-4 rounded-xl"
-                            >
-                                Add
-                            </button>
-                        </div>
-                        <div className="space-y-2">
-                            {profile.socialLinks.map((l, i) => (
-                                <div key={i} className="flex justify-between bg-gray-800 p-2 rounded-xl">
-                                    <span>{l.title}: {l.url}</span>
-                                    <button
-                                        onClick={() =>
-                                            setProfile({
-                                                ...profile,
-                                                socialLinks: profile.socialLinks.filter((_, idx) => idx !== i),
-                                            })
-                                        }
-                                        className="text-red-400"
-                                    >
-                                        ✕
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Skills */}
-                    <div className="bg-gray-900 p-4 rounded-xl space-y-4">
-                        <h2 className="text-xl font-semibold">Skills</h2>
-                        <div className="flex gap-2 items-center">
-                            <input
-                                placeholder="Skill Name"
-                                value={newSkill.name}
-                                onChange={(e) => setNewSkill({ ...newSkill, name: e.target.value })}
-                                className="p-2 rounded bg-gray-800"
-                            />
-                            <input
-                                type="number"
-                                placeholder="%"
-                                value={newSkill.percentage}
-                                onChange={(e) => setNewSkill({ ...newSkill, percentage: Number(e.target.value) })}
-                                className="w-20 p-2 rounded bg-gray-800"
-                            />
-                            <input
-                                placeholder="Icon URL"
-                                value={newSkill.icon}
-                                onChange={(e) => setNewSkill({ ...newSkill, icon: e.target.value })}
-                                className="p-2 rounded bg-gray-800"
-                            />
-                            <button
-                                onClick={() => {
-                                    if (!newSkill.name) return;
-                                    setProfile({ ...profile, skills: [...profile.skills, newSkill] });
-                                    setNewSkill({ name: "", percentage: 50, icon: "" });
-                                }}
-                                className="bg-sky-600 px-4 rounded-xl"
-                            >
-                                Add
-                            </button>
-                        </div>
-                        <div className="space-y-2">
-                            {profile.skills.map((s, i) => (
-                                <div key={i} className="flex justify-between bg-gray-800 p-2 rounded-xl">
-                                    <span>{s.name} - {s.percentage}%</span>
-                                    <button
-                                        onClick={() =>
-                                            setProfile({
-                                                ...profile,
-                                                skills: profile.skills.filter((_, idx) => idx !== i),
-                                            })
-                                        }
-                                        className="text-red-400"
-                                    >
-                                        ✕
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <button
-                        onClick={saveProfile}
-                        className="mt-4 bg-sky-600 hover:bg-sky-700 px-6 py-3 rounded-xl"
-                    >
-                        Save Profile
-                    </button>
+                    </label>
                 </div>
 
-                {/* --- Profile Preview --- */}
-                <div className="flex-1">
-                    <UserProfile profile={profile} />
+                <div className="flex gap-4">
+                    <label>
+                        <input
+                            type="checkbox"
+                            checked={profile.glow}
+                            onChange={(e) => setProfile({ ...profile, glow: e.target.checked })}
+                        />
+                        Glow
+                    </label>
+                    <label>
+                        <input
+                            type="checkbox"
+                            checked={profile.trail}
+                            onChange={(e) => setProfile({ ...profile, trail: e.target.checked })}
+                        />
+                        Cursor Trail
+                    </label>
                 </div>
+
+                <button onClick={saveProfile} className="bg-sky-600 px-6 py-2 rounded">
+                    Save Changes
+                </button>
             </div>
         </div>
     );
